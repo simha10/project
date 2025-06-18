@@ -4,7 +4,10 @@ import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import authRoutes from './routes/authRoutes';
 import surveyRoutes from './routes/surveyRoutes';
+
 import userRoutes from './routes/userRoutes';
+
+console.log('userRoutes imported:', userRoutes);
 
 // Load environment variables
 dotenv.config();
@@ -12,6 +15,8 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 const prisma = new PrismaClient();
+
+console.log('Mounting userRoutes at /users');
 
 // Middleware
 app.use(cors());

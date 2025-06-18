@@ -18,6 +18,7 @@ export class AuthService {
   static async register(data: RegisterDto, currentUserRole: UserRole): Promise<{ user: any; token: string }> {
     // Check if current user has permission to register
     if (!['SUPERADMIN', 'ADMIN'].includes(currentUserRole)) {
+      console.log('Error: Only SuperAdmin and Admin can register new users');
       throw new Error('Only SuperAdmin and Admin can register new users');
     }
 
@@ -27,6 +28,7 @@ export class AuthService {
     });
 
     if (existingUser) {
+      console.log('Error: Username already exists');
       throw new Error('Username already exists');
     }
 
@@ -39,7 +41,7 @@ export class AuthService {
         username: data.username,
         password: hashedPassword,
         role: data.role,
-        assignedWards: data.assignedWards || []
+        phoneNumber: data.phoneNumber
       }
     });
 

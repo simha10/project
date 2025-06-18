@@ -18,14 +18,28 @@ interface AuthRequest extends Request {
 export class UserController {
   static async registerUser(req: AuthRequest, res: Response, next: NextFunction) {
     try {
+      console.log('RegisterUser called with body:', req.body);
       if (!req.user) {
+        console.log('Unauthorized: No user in request');
         return res.status(401).json({
           success: false,
           message: 'Authentication required'
         });
       }
 
-      const { username, password, role } = registerSchema.parse(req.body);
+      let validatedData;
+      try {
+        validatedData = registerSchema.parse(req.body);
+      } catch (validationError: any) {
+        console.log('Validation error:', validationError.errors);
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: validationError.errors
+        });
+      }
+
+      const { username, password, role, phoneNumber } = validatedData;
       const creatorRole = req.user.role;
 
       // Define role hierarchy and permissions
@@ -38,6 +52,7 @@ export class UserController {
 
       // Check if creator has permission to create the requested role
       if (!allowedByRole[creatorRole].includes(role)) {
+        console.log('Forbidden: Insufficient permissions to create role:', role);
         return res.status(403).json({ 
           success: false,
           message: 'You do not have permission to create users with this role' 
@@ -50,6 +65,7 @@ export class UserController {
       });
 
       if (existingUser) {
+        console.log('Username already exists:', username);
         return res.status(400).json({ 
           success: false,
           message: 'Username already exists' 
@@ -65,6 +81,7 @@ export class UserController {
           username,
           password: hashedPassword,
           role,
+          phoneNumber
         },
         select: {
           id: true,
@@ -75,6 +92,7 @@ export class UserController {
         }
       });
 
+      console.log('User created successfully:', newUser);
       res.status(201).json({
         success: true,
         message: 'User created successfully',
@@ -82,6 +100,7 @@ export class UserController {
       });
 
     } catch (error) {
+      console.error('Error in registerUser:', error);
       next(error);
     }
   }
