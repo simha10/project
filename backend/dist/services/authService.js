@@ -26,6 +26,7 @@ class AuthService {
         return __awaiter(this, void 0, void 0, function* () {
             // Check if current user has permission to register
             if (!['SUPERADMIN', 'ADMIN'].includes(currentUserRole)) {
+                console.log('Error: Only SuperAdmin and Admin can register new users');
                 throw new Error('Only SuperAdmin and Admin can register new users');
             }
             // Check if username already exists
@@ -33,6 +34,7 @@ class AuthService {
                 where: { username: data.username }
             });
             if (existingUser) {
+                console.log('Error: Username already exists');
                 throw new Error('Username already exists');
             }
             // Hash password
@@ -43,7 +45,7 @@ class AuthService {
                     username: data.username,
                     password: hashedPassword,
                     role: data.role,
-                    assignedWards: data.assignedWards || []
+                    phoneNumber: data.phoneNumber
                 }
             });
             // Generate token

@@ -8,10 +8,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const authService_1 = require("../services/authService");
 const authDto_1 = require("../dtos/authDto");
+const client_1 = require("@prisma/client");
+const bcrypt_1 = __importDefault(require("bcrypt"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const prisma = new client_1.PrismaClient();
 class AuthController {
     static register(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -35,19 +42,56 @@ class AuthController {
             }
         });
     }
-    static login(req, res) {
+    static login(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const validatedData = authDto_1.LoginDtoSchema.parse(req.body);
-                const result = yield authService_1.AuthService.login(validatedData);
-                res.json(result);
+                const { username, password, role } = authDto_1.loginSchema.parse(req.body);
+                const user = yield prisma.user.findUnique({
+                    where: { username },
+                    select: {
+                        id: true,
+                        username: true,
+                        password: true,
+                        role: true
+                    }
+                });
+                if (!user) {
+                    return res.status(401).json({
+                        success: false,
+                        message: 'Invalid credentials'
+                    });
+                }
+                const isMatch = yield bcrypt_1.default.compare(password, user.password);
+                if (!isMatch) {
+                    return res.status(401).json({
+                        success: false,
+                        message: 'Invalid credentials'
+                    });
+                }
+                if (user.role !== role) {
+                    return res.status(403).json({
+                        success: false,
+                        message: 'Role mismatch for this user'
+                    });
+                }
+                const token = jsonwebtoken_1.default.sign({
+                    userId: user.id,
+                    role: user.role
+                }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '7d' });
+                res.json({
+                    success: true,
+                    data: {
+                        token,
+                        user: {
+                            id: user.id,
+                            username: user.username,
+                            role: user.role
+                        }
+                    }
+                });
             }
             catch (error) {
-                if (error.name === 'ZodError') {
-                    res.status(400).json({ error: error.errors });
-                    return;
-                }
-                res.status(401).json({ error: error.message });
+                next(error);
             }
         });
     }

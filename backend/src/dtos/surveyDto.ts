@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PropertyType, RoadType, ConstructionType, NRPropCategory, NRSubCategory } from '@prisma/client';
+import { PropertyType } from '@prisma/client';
 
 // Nested DTOs
 const PropertyDetailsSchema = z.object({

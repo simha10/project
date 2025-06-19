@@ -15,7 +15,6 @@ async function main() {
       password: hashedPassword,
       role: 'SUPERADMIN',
       phoneNumber: '1234567890',
-      assignedWards: [],
     },
   });
 

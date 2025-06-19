@@ -56,9 +56,10 @@ const LoginScreen = () => {
       };
 
       const response = await axios.post(`${BACKEND_URL}/auth/login`, payload);
-      await SecureStore.setItemAsync('token', response.data.token);
+      const tokenToStore = typeof response.data.data.token === 'string' ? response.data.data.token : JSON.stringify(response.data.data.token);
+      await SecureStore.setItemAsync('token', tokenToStore);
 
-      const userRole = response.data.user.role;
+      const userRole = response.data.data.user.role;
 
       // Navigate based on role
       switch (userRole) {

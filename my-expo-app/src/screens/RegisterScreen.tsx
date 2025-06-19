@@ -86,7 +86,7 @@ const RegisterScreen = () => {
         },
       });
       Alert.alert('Success', 'User registered successfully');
-      navigation.navigate('LoginScreen');
+      navigation.navigate('CreatedUsersScreen');
     } catch (error: any) {
       console.log('Registration error:', error);
       Alert.alert(

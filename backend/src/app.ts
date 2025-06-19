@@ -7,7 +7,8 @@ import surveyRoutes from './routes/surveyRoutes';
 
 import userRoutes from './routes/userRoutes';
 
-console.log('userRoutes imported:', userRoutes);
+/* console.log('userRoutes imported:', userRoutes); */
+// Removed to prevent verbose logging of router object
 
 // Load environment variables
 dotenv.config();
@@ -16,7 +17,7 @@ dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
 
-console.log('Mounting userRoutes at /users');
+/* console.log('Mounting userRoutes at /users'); */
 
 // Middleware
 app.use(cors());
@@ -34,7 +35,7 @@ app.get('/health', (req, res) => {
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
+  //console.error(err.stack);
   res.status(500).json({ error: 'Something went wrong!' });
 });
 

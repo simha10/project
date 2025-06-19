@@ -81,7 +81,8 @@ export class UserController {
           username,
           password: hashedPassword,
           role,
-          phoneNumber
+          phoneNumber,
+          createdById: req.user.id
         },
         select: {
           id: true,
@@ -104,4 +105,37 @@ export class UserController {
       next(error);
     }
   }
-} 
+
+  static async getCreatedUsers(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      const users = await prisma.user.findMany({
+        where: {
+          createdBy: {
+            id: req.user.id
+          }
+        },
+        select: {
+          id: true,
+          username: true,
+          role: true,
+          createdAt: true
+        }
+      });
+
+      res.json({
+        success: true,
+        data: users
+      });
+    } catch (error) {
+      console.error('Error in getCreatedUsers:', error);
+      next(error);
+    }
+  }
+}

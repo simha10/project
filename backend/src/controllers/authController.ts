@@ -1,10 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/authService';
-import { RegisterDtoSchema, LoginDtoSchema, UserRole } from '../dtos/authDto';
+import { RegisterDtoSchema, loginSchema, UserRole } from '../dtos/authDto';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { loginSchema } from '../dtos/authDto';
 
 const prisma = new PrismaClient();
 
