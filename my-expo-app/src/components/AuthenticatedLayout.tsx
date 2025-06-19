@@ -19,7 +19,7 @@ const AuthenticatedLayout: React.FC<AuthenticatedLayoutProps> = ({ children, use
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.toggleButton} onPress={toggleSideNav}>
-        <Text style={styles.toggleButtonText}>{sideNavOpen ? '×' : '☰'}</Text>
+        <Text style={styles.toggleButtonText}>{sideNavOpen ? 'x' : '☰'}</Text>
       </TouchableOpacity>
       <SideNav userRole={userRole} isOpen={sideNavOpen} toggleSideNav={toggleSideNav} />
       <View style={[styles.content, sideNavOpen && styles.contentShift]}>

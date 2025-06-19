@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import * as SecureStore from 'expo-secure-store';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -29,7 +30,6 @@ const SplashScreen = () => {
     const checkAuthAndNavigate = async () => {
       try {
         const token = await SecureStore.getItemAsync('token');
-        // Navigate after 3 seconds
         setTimeout(() => {
           navigation.replace(token ? 'AdminDashboard' : 'LoginScreen');
         }, 3000);
@@ -42,7 +42,7 @@ const SplashScreen = () => {
   }, []);
 
   return (
-    <View className="flex-1 bg-white items-center justify-center">
+    <SafeAreaView className="flex-1 bg-gradient-to-b from-blue-600 to-blue-800 items-center justify-center">
       <Animated.View
         style={{
           opacity: fadeAnim,
@@ -55,11 +55,11 @@ const SplashScreen = () => {
           className="w-32 h-32 mb-4"
           resizeMode="contain"
         />
-        <Text className="text-2xl font-bold text-blue-600 mb-2">LRM CONSULTANTS</Text>
-        <Text className="text-xl text-gray-600">SURVEY APP</Text>
+        <Text className="text-2xl font-bold text-white mb-2">LRM CONSULTANTS</Text>
+        <Text className="text-xl text-gray-200">SURVEY APP</Text>
       </Animated.View>
-    </View>
+    </SafeAreaView>
   );
 };
 
-export default SplashScreen; 
+export default SplashScreen;

@@ -17,4 +17,11 @@ router.post(
   (req, res, next) => UserController.registerUser(req, res, next)
 );
 
+// Add GET /me route to fetch current user's profile
+router.get(
+  '/me',
+  authenticate,
+  (req, res, next) => UserController.getProfile(req, res, next)
+);
+
 export default router;

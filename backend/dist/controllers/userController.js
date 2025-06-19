@@ -77,7 +77,8 @@ class UserController {
                         username,
                         password: hashedPassword,
                         role,
-                        phoneNumber
+                        phoneNumber,
+                        createdById: req.user.id
                     },
                     select: {
                         id: true,
@@ -96,6 +97,73 @@ class UserController {
             }
             catch (error) {
                 console.error('Error in registerUser:', error);
+                next(error);
+            }
+        });
+    }
+    static getProfile(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                if (!req.user) {
+                    return res.status(401).json({
+                        success: false,
+                        message: 'Authentication required'
+                    });
+                }
+                const user = yield prisma.user.findUnique({
+                    where: { id: req.user.id },
+                    select: {
+                        username: true,
+                        role: true,
+                        phoneNumber: true
+                    }
+                });
+                if (!user) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'User not found'
+                    });
+                }
+                res.json({
+                    success: true,
+                    data: user
+                });
+            }
+            catch (error) {
+                console.error('Error in getProfile:', error);
+                next(error);
+            }
+        });
+    }
+    static getCreatedUsers(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                if (!req.user) {
+                    return res.status(401).json({
+                        success: false,
+                        message: 'Authentication required'
+                    });
+                }
+                const users = yield prisma.user.findMany({
+                    where: {
+                        createdBy: {
+                            id: req.user.id
+                        }
+                    },
+                    select: {
+                        id: true,
+                        username: true,
+                        role: true,
+                        createdAt: true
+                    }
+                });
+                res.json({
+                    success: true,
+                    data: users
+                });
+            }
+            catch (error) {
+                console.error('Error in getCreatedUsers:', error);
                 next(error);
             }
         });

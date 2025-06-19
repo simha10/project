@@ -106,6 +106,41 @@ export class UserController {
     }
   }
 
+  static async getProfile(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required'
+        });
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: {
+          username: true,
+          role: true,
+          phoneNumber: true
+        }
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        data: user
+      });
+    } catch (error) {
+      console.error('Error in getProfile:', error);
+      next(error);
+    }
+  }
+
   static async getCreatedUsers(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       if (!req.user) {

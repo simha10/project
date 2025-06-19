@@ -18,7 +18,6 @@ dotenv_1.default.config();
 const app = (0, express_1.default)();
 const prisma = new client_1.PrismaClient();
 /* console.log('Mounting userRoutes at /users'); */
-// Removed to prevent verbose logging of router mounting
 // Middleware
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());

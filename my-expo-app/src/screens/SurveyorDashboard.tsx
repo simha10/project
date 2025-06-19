@@ -6,6 +6,8 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import * as SecureStore from 'expo-secure-store';
 import axios from 'axios';
 import DashboardLayout from '../components/DashboardLayout';
+import { Feather } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -15,6 +17,7 @@ const SurveyorDashboard = () => {
   const navigation = useNavigation<NavigationProp>();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
     const fetchUserRole = async () => {
@@ -47,29 +50,38 @@ const SurveyorDashboard = () => {
     fetchUserRole();
   }, []);
 
-  const handleLogout = async () => {
-    await SecureStore.deleteItemAsync('token');
-    navigation.navigate('LoginScreen');
-  };
-
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center bg-white">
+      <SafeAreaView className={`flex-1 justify-center items-center ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
         <ActivityIndicator size="large" color="#3b82f6" />
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
     <DashboardLayout userRole={userRole || ''}>
-      <Text className="text-2xl font-bold mb-8 text-center">Surveyor Dashboard</Text>
-      
-      <TouchableOpacity
-        className="bg-red-500 h-[50px] rounded-lg justify-center items-center mt-5"
-        onPress={handleLogout}
-      >
-        <Text className="text-white text-base font-semibold">Logout</Text>
-      </TouchableOpacity>
+      <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+        <View className="flex-1 p-5 justify-center items-center">
+          <Text className={`text-2xl font-bold mb-8 text-center ${isDarkMode ? 'text-white' : 'text-black'}`}>
+            Surveyor Dashboard
+          </Text>
+
+          <TouchableOpacity
+            onPress={() => setIsDarkMode(!isDarkMode)}
+            className="flex-row items-center justify-center mt-4"
+          >
+            <Feather
+              name={isDarkMode ? 'sun' : 'moon'}
+              size={20}
+              color={isDarkMode ? '#fff' : '#000'}
+              className="mr-2"
+            />
+            <Text className={`text-base ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     </DashboardLayout>
   );
 };

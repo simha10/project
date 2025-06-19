@@ -10,4 +10,6 @@ router.get('/test', (req, res) => {
 });
 // Protected routes - only accessible by SUPERADMIN and ADMIN
 router.post('/register', authMiddleware_1.authenticate, (0, authMiddleware_1.authorizeRoles)('SUPERADMIN', 'ADMIN'), (req, res, next) => userController_1.UserController.registerUser(req, res, next));
+// Add GET /me route to fetch current user's profile
+router.get('/me', authMiddleware_1.authenticate, (req, res, next) => userController_1.UserController.getProfile(req, res, next));
 exports.default = router;
