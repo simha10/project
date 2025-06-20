@@ -31,44 +31,55 @@ export class AuthController {
 
   static async login(req: Request, res: Response, next: NextFunction) {
     try {
-      const { username, password, role } = loginSchema.parse(req.body);
+      const { username, password } = loginSchema.parse(req.body);
 
-      const user = await prisma.user.findUnique({ 
-        where: { username },
-        select: {
-          id: true,
-          username: true,
-          password: true,
-          role: true
-        }
+      const user = await prisma.usersMaster.findFirst({
+        where: { username }
       });
 
       if (!user) {
-        return res.status(401).json({ 
+        return res.status(401).json({
           success: false,
-          message: 'Invalid credentials' 
+          message: 'Invalid credentials'
         });
       }
 
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
-        return res.status(401).json({ 
+        return res.status(401).json({
           success: false,
-          message: 'Invalid credentials' 
+          message: 'Invalid credentials'
         });
       }
 
-      if (user.role !== role) {
-        return res.status(403).json({ 
+      const roleMapping = await prisma.userRoleMapping.findFirst({
+        where: { userId: user.userId },
+        select: { roleId: true }
+      });
+
+      if (!roleMapping) {
+        return res.status(500).json({
           success: false,
-          message: 'Role mismatch for this user' 
+          message: 'Role mapping not found for this user'
+        });
+      }
+
+      const rolePermission = await prisma.rolePermissionMaster.findFirst({
+        where: { roleId: roleMapping.roleId },
+        select: { roleName: true }
+      });
+
+      if (!rolePermission) {
+        return res.status(500).json({
+          success: false,
+          message: 'Role permission not found for this role'
         });
       }
 
       const token = jwt.sign(
-        { 
-          userId: user.id, 
-          role: user.role 
+        {
+          userId: user.userId,
+          role: rolePermission.roleName
         },
         process.env.JWT_SECRET || 'your-secret-key',
         { expiresIn: '7d' }
@@ -79,9 +90,9 @@ export class AuthController {
         data: {
           token,
           user: {
-            id: user.id,
+            userId: user.userId,
             username: user.username,
-            role: user.role
+            role: rolePermission.roleName
           }
         }
       });

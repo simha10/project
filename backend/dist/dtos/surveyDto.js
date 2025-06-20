@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SurveySyncDtoSchema = void 0;
 const zod_1 = require("zod");
-const client_1 = require("@prisma/client");
 // Nested DTOs
 const PropertyDetailsSchema = zod_1.z.object({
     responseTypeId: zod_1.z.string().uuid(),
@@ -81,7 +80,7 @@ exports.SurveySyncDtoSchema = zod_1.z.object({
     gisId: zod_1.z.string(),
     mapId: zod_1.z.string(),
     subGisId: zod_1.z.string(),
-    propertyType: zod_1.z.nativeEnum(client_1.PropertyType),
+    propertyType: zod_1.z.string(),
     property: PropertyDetailsSchema,
     owner: OwnerDetailsSchema,
     location: LocationDetailsSchema,

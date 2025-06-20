@@ -10,7 +10,7 @@ type UserRole = 'SUPERADMIN' | 'ADMIN' | 'SUPERVISOR' | 'SURVEYOR';
 // Extend Express Request type to include user
 interface AuthRequest extends Request {
   user?: {
-    id: string;
+    userId: string;
     role: UserRole;
   };
 }
@@ -39,7 +39,7 @@ export class UserController {
         });
       }
 
-      const { username, password, role, phoneNumber } = validatedData;
+      const { username, password, mobileNumber } = validatedData;
       const creatorRole = req.user.role;
 
       // Define role hierarchy and permissions
@@ -51,24 +51,24 @@ export class UserController {
       };
 
       // Check if creator has permission to create the requested role
-      if (!allowedByRole[creatorRole].includes(role)) {
-        console.log('Forbidden: Insufficient permissions to create role:', role);
-        return res.status(403).json({ 
+      if (!allowedByRole[creatorRole].includes(req.user.role)) {
+        console.log('Forbidden: Insufficient permissions to create role:', req.user.role);
+        return res.status(403).json({
           success: false,
-          message: 'You do not have permission to create users with this role' 
+          message: 'You do not have permission to create users with this role'
         });
       }
 
       // Check if username already exists
-      const existingUser = await prisma.user.findUnique({ 
-        where: { username } 
+      const existingUser = await prisma.usersMaster.findFirst({
+        where: { username }
       });
 
       if (existingUser) {
         console.log('Username already exists:', username);
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          message: 'Username already exists' 
+          message: 'Username already exists'
         });
       }
 
@@ -76,20 +76,38 @@ export class UserController {
       const hashedPassword = await bcrypt.hash(password, 10);
 
       // Create new user
-      const newUser = await prisma.user.create({
+      const newUser = await prisma.usersMaster.create({
         data: {
           username,
           password: hashedPassword,
-          role,
-          phoneNumber,
-          createdById: req.user.id
+          mobileNumber,
         },
         select: {
-          id: true,
+          userId: true,
           username: true,
-          role: true,
-          createdAt: true,
-          updatedAt: true
+          isCreatedAt: true
+        }
+      });
+
+      // After creating a user, fetch the roleId from RolePermissionMaster using the role name, then create a UserRoleMapping entry with userId and roleId
+      const role = req.user.role;
+      const roleId = await prisma.rolePermissionMaster.findFirst({
+        where: { roleName: role },
+        select: { roleId: true }
+      });
+
+      if (!roleId) {
+        console.error('Role not found in RolePermissionMaster');
+        return res.status(500).json({
+          success: false,
+          message: 'Role not found in RolePermissionMaster'
+        });
+      }
+
+      await prisma.userRoleMapping.create({
+        data: {
+          userId: newUser.userId,
+          roleId: roleId.roleId
         }
       });
 
@@ -115,12 +133,11 @@ export class UserController {
         });
       }
 
-      const user = await prisma.user.findUnique({
-        where: { id: req.user.id },
+      const user = await prisma.usersMaster.findUnique({
+        where: { userId: req.user.userId },
         select: {
           username: true,
-          role: true,
-          phoneNumber: true
+          mobileNumber: true
         }
       });
 
@@ -150,17 +167,12 @@ export class UserController {
         });
       }
 
-      const users = await prisma.user.findMany({
-        where: {
-          createdBy: {
-            id: req.user.id
-          }
-        },
+      const users = await prisma.usersMaster.findMany({
+        // If you want to filter by creator, add logic here if your schema supports it
         select: {
-          id: true,
+          userId: true,
           username: true,
-          role: true,
-          createdAt: true
+          isCreatedAt: true
         }
       });
 

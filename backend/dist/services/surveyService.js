@@ -17,54 +17,44 @@ class SurveyService {
         return __awaiter(this, void 0, void 0, function* () {
             return yield prisma.$transaction((tx) => __awaiter(this, void 0, void 0, function* () {
                 // Create the main survey record with all nested relations
-                const survey = yield tx.survey.create({
+                const survey = yield tx.surveyDetails.create({
                     data: {
-                        surveyorId,
                         ulbId: data.ulbId,
                         zoneId: data.zoneId,
                         wardId: data.wardId,
                         mohallaId: data.mohallaId,
-                        dateOfEntry: new Date(data.dateOfEntry),
+                        surveyTypeId: data.surveyTypeId,
+                        entryDate: new Date(data.dateOfEntry),
                         gisId: data.gisId,
-                        mapId: data.mapId,
+                        mapId: Number(data.mapId),
                         subGisId: data.subGisId,
-                        propertyType: data.propertyType,
-                        status: 'PENDING',
                         // Create nested relations
-                        property: {
+                        propertyDetails: {
                             create: data.property
                         },
-                        owner: {
+                        ownerDetails: {
                             create: data.owner
                         },
-                        location: {
+                        locationDetails: {
                             create: data.location
                         },
-                        other: {
+                        otherDetails: {
                             create: data.other
                         },
-                        assessment: {
-                            create: data.assessment
-                        },
-                        floors: {
+                        residentialPropertyAssessments: {
                             createMany: {
                                 data: data.floors
                             }
                         },
-                        attachments: {
+                        propertyAttachments: {
                             createMany: {
                                 data: data.attachments
                             }
                         }
                     },
                     include: {
-                        property: true,
-                        owner: true,
-                        location: true,
-                        other: true,
-                        assessment: true,
-                        floors: true,
-                        attachments: true
+                        residentialPropertyAssessments: true,
+                        propertyAttachments: true
                     }
                 });
                 return survey;

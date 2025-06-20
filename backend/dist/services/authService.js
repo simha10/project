@@ -20,7 +20,7 @@ const prisma = new client_1.PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-token-with-at-least-32-characters-long';
 class AuthService {
     static generateToken(user) {
-        return jsonwebtoken_1.default.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+        return jsonwebtoken_1.default.sign({ userId: user.userId, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     }
     static register(data, currentUserRole) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -30,7 +30,7 @@ class AuthService {
                 throw new Error('Only SuperAdmin and Admin can register new users');
             }
             // Check if username already exists
-            const existingUser = yield prisma.user.findUnique({
+            const existingUser = yield prisma.usersMaster.findFirst({
                 where: { username: data.username }
             });
             if (existingUser) {
@@ -39,22 +39,37 @@ class AuthService {
             }
             // Hash password
             const hashedPassword = yield bcrypt_1.default.hash(data.password, 10);
-            // Create user with validated role
-            const user = yield prisma.user.create({
+            // Create user
+            const user = yield prisma.usersMaster.create({
                 data: {
                     username: data.username,
                     password: hashedPassword,
-                    role: data.role,
-                    phoneNumber: data.phoneNumber
+                    mobileNumber: data.mobileNumber
+                }
+            });
+            // Fetch roleId from RolePermissionMaster
+            const roleIdObj = yield prisma.rolePermissionMaster.findFirst({
+                where: { roleName: currentUserRole },
+                select: { roleId: true }
+            });
+            if (!roleIdObj)
+                throw new Error('Role not found');
+            // Create UserRoleMapping entry
+            yield prisma.userRoleMapping.create({
+                data: {
+                    userId: user.userId,
+                    roleId: roleIdObj.roleId
                 }
             });
             // Generate token
-            const token = this.generateToken(user);
-            // Create session
+            const token = this.generateToken({ userId: user.userId, role: currentUserRole });
+            // Create session (adjust fields as per your Session model)
             yield prisma.session.create({
                 data: {
-                    userId: user.id,
-                    token
+                    userId: user.userId,
+                    loginTime: new Date(),
+                    logoutTime: new Date(),
+                    isActive: true
                 }
             });
             return { user, token };
@@ -62,8 +77,9 @@ class AuthService {
     }
     static login(data) {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             // Find user
-            const user = yield prisma.user.findUnique({
+            const user = yield prisma.usersMaster.findFirst({
                 where: { username: data.username }
             });
             if (!user) {
@@ -74,13 +90,21 @@ class AuthService {
             if (!validPassword) {
                 throw new Error('Invalid credentials');
             }
+            // Fetch user's role
+            const userRoleMapping = yield prisma.userRoleMapping.findFirst({
+                where: { userId: user.userId },
+                include: { role: true }
+            });
+            const roleName = ((_a = userRoleMapping === null || userRoleMapping === void 0 ? void 0 : userRoleMapping.role) === null || _a === void 0 ? void 0 : _a.roleName) || 'UNKNOWN';
             // Generate token
-            const token = this.generateToken(user);
-            // Create session
+            const token = this.generateToken({ userId: user.userId, role: roleName });
+            // Create session (adjust fields as per your Session model)
             yield prisma.session.create({
                 data: {
-                    userId: user.id,
-                    token
+                    userId: user.userId,
+                    loginTime: new Date(),
+                    logoutTime: new Date(),
+                    isActive: true
                 }
             });
             return { user, token };
@@ -90,8 +114,8 @@ class AuthService {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
-                const user = yield prisma.user.findUnique({
-                    where: { id: decoded.userId }
+                const user = yield prisma.usersMaster.findUnique({
+                    where: { userId: decoded.userId }
                 });
                 if (!user) {
                     throw new Error('User not found');

@@ -45,15 +45,9 @@ class AuthController {
     static login(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const { username, password, role } = authDto_1.loginSchema.parse(req.body);
-                const user = yield prisma.user.findUnique({
-                    where: { username },
-                    select: {
-                        id: true,
-                        username: true,
-                        password: true,
-                        role: true
-                    }
+                const { username, password } = authDto_1.loginSchema.parse(req.body);
+                const user = yield prisma.usersMaster.findFirst({
+                    where: { username }
                 });
                 if (!user) {
                     return res.status(401).json({
@@ -68,24 +62,38 @@ class AuthController {
                         message: 'Invalid credentials'
                     });
                 }
-                if (user.role !== role) {
-                    return res.status(403).json({
+                const roleMapping = yield prisma.userRoleMapping.findFirst({
+                    where: { userId: user.userId },
+                    select: { roleId: true }
+                });
+                if (!roleMapping) {
+                    return res.status(500).json({
                         success: false,
-                        message: 'Role mismatch for this user'
+                        message: 'Role mapping not found for this user'
+                    });
+                }
+                const rolePermission = yield prisma.rolePermissionMaster.findFirst({
+                    where: { roleId: roleMapping.roleId },
+                    select: { roleName: true }
+                });
+                if (!rolePermission) {
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Role permission not found for this role'
                     });
                 }
                 const token = jsonwebtoken_1.default.sign({
-                    userId: user.id,
-                    role: user.role
+                    userId: user.userId,
+                    role: rolePermission.roleName
                 }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '7d' });
                 res.json({
                     success: true,
                     data: {
                         token,
                         user: {
-                            id: user.id,
+                            userId: user.userId,
                             username: user.username,
-                            role: user.role
+                            role: rolePermission.roleName
                         }
                     }
                 });

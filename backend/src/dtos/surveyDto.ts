@@ -1,79 +1,84 @@
 import { z } from 'zod';
-import { PropertyType } from '@prisma/client';
 
-// Nested DTOs
-const PropertyDetailsSchema = z.object({
+// PropertyDetails
+export const PropertyDetailsSchema = z.object({
   responseTypeId: z.string().uuid(),
-  houseNumber: z.string(),
-  electricityNo: z.string(),
-  wardSewerageNo: z.string(),
+  oldHouseNumber: z.string().optional(),
+  electricityConsumerName: z.string().optional(),
+  waterSewerageConnectionNumber: z.string().optional(),
   respondentName: z.string(),
-  isRented: z.boolean().default(false),
-  rentAmount: z.number().optional(),
-  tenantName: z.string().optional(),
-  tenantMobile: z.string().optional(),
-  tenantAadhaar: z.string().optional(),
+  respondentStatusId: z.string().uuid(),
 });
 
-const OwnerDetailsSchema = z.object({
+// OwnerDetails
+export const OwnerDetailsSchema = z.object({
   ownerName: z.string(),
   fatherHusbandName: z.string(),
-  mobileNo: z.string(),
-  aadhaarNo: z.string(),
-  email: z.string().email().optional(),
-  alternateMobile: z.string().optional(),
-  isNRI: z.boolean().default(false),
-  nriAddress: z.string().optional(),
+  mobileNumber: z.string().optional(),
+  aadharNumber: z.string().optional(),
 });
 
-const LocationDetailsSchema = z.object({
-  latitude: z.number(),
-  longitude: z.number(),
+// LocationDetails
+export const LocationDetailsSchema = z.object({
+  propertyLatitude: z.number(),
+  propertyLongitude: z.number(),
   assessmentYear: z.string(),
+  propertyTypeId: z.string().uuid(),
+  buildingName: z.string().optional(),
   roadTypeId: z.string().uuid(),
   constructionYear: z.string(),
   constructionTypeId: z.string().uuid(),
-  landmark: z.string(),
-  address: z.string(),
-  newWardNo: z.string(),
-  plotArea: z.number(),
-  builtUpArea: z.number(),
+  addressRoadName: z.string(),
+  locality: z.string().optional(),
+  pinCode: z.number(),
+  landmark: z.string().optional(),
+  fourWayEast: z.string().optional(),
+  fourWayWest: z.string().optional(),
+  fourWayNorth: z.string().optional(),
+  fourWaySouth: z.string().optional(),
+  newWard: z.string(),
 });
 
-const OtherDetailsSchema = z.object({
-  rainHarvesting: z.boolean(),
-  waterSupply: z.string(),
-  sewerageLine: z.string(),
-  parkingType: z.string(),
-  parkingArea: z.number().optional(),
-  isCommercial: z.boolean().default(false),
-  commercialArea: z.number().optional(),
-});
-
-const FloorDetailsSchema = z.object({
-  floorNo: z.number(),
-  floorType: z.string(),
-  details: z.string(),
-  area: z.number(),
-  usage: z.string(),
-  isRented: z.boolean().default(false),
-  rentAmount: z.number().optional(),
-});
-
-const PropertyAssessmentSchema = z.object({
-  categoryId: z.string().uuid(),
-  subCategoryId: z.string().uuid(),
-  annualRent: z.number(),
-  marketValue: z.number(),
-  assessedValue: z.number(),
-  taxAmount: z.number(),
+// OtherDetails
+export const OtherDetailsSchema = z.object({
+  waterSourceId: z.string().uuid(),
+  rainWaterHarvestingSystem: z.string().optional(),
+  plantation: z.string().optional(),
+  parking: z.string().optional(),
+  pollution: z.string().optional(),
+  pollutionMeasurementTaken: z.string().optional(),
+  waterSupplyWithin200Meters: z.string().optional(),
+  sewerageLineWithin100Meters: z.string().optional(),
+  disposalTypeId: z.string().uuid(),
+  totalPlotArea: z.number(),
+  builtupAreaOfGroundFloor: z.number(),
   remarks: z.string().optional(),
 });
 
-const PropertyAttachmentSchema = z.object({
-  type: z.enum(['PHOTO', 'DOCUMENT']),
-  url: z.string().url(),
-  description: z.string().optional(),
+// ResidentialPropertyAssessment
+export const ResidentialPropertyAssessmentSchema = z.object({
+  floorNumber: z.string(),
+  occupancyStatusId: z.string().uuid(),
+  constructionNatureId: z.string().uuid(),
+  coveredArea: z.number(),
+  allRoomVerandaArea: z.number(),
+  allBalconyKitchenArea: z.number(),
+  allGarageArea: z.number(),
+  carpetArea: z.number(),
+});
+
+// PropertyAttachmentDetails
+export const PropertyAttachmentDetailsSchema = z.object({
+  image1Url: z.string().optional(),
+  image2Url: z.string().optional(),
+  image3Url: z.string().optional(),
+  image4Url: z.string().optional(),
+  image5Url: z.string().optional(),
+  image6Url: z.string().optional(),
+  image7Url: z.string().optional(),
+  image8Url: z.string().optional(),
+  image9Url: z.string().optional(),
+  image10Url: z.string().optional(),
 });
 
 // Main Survey DTO
@@ -82,26 +87,26 @@ export const SurveySyncDtoSchema = z.object({
   zoneId: z.string().uuid(),
   wardId: z.string().uuid(),
   mohallaId: z.string().uuid(),
-  dateOfEntry: z.string().datetime(),
+  surveyTypeId: z.string().uuid(),
+  entryDate: z.string().datetime(),
+  parcelId: z.number().optional(),
+  mapId: z.number(),
   gisId: z.string(),
-  mapId: z.string(),
-  subGisId: z.string(),
-  propertyType: z.nativeEnum(PropertyType),
-  property: PropertyDetailsSchema,
-  owner: OwnerDetailsSchema,
-  location: LocationDetailsSchema,
-  other: OtherDetailsSchema,
-  floors: z.array(FloorDetailsSchema),
-  assessment: PropertyAssessmentSchema,
-  attachments: z.array(PropertyAttachmentSchema),
+  subGisId: z.string().optional(),
+  propertyDetails: PropertyDetailsSchema,
+  ownerDetails: OwnerDetailsSchema,
+  locationDetails: LocationDetailsSchema,
+  otherDetails: OtherDetailsSchema,
+  residentialPropertyAssessments: z.array(ResidentialPropertyAssessmentSchema),
+  propertyAttachments: z.array(PropertyAttachmentDetailsSchema),
 });
 
-// Type inference
 export type SurveySyncDto = z.infer<typeof SurveySyncDtoSchema>;
+
+// Type inference
 export type PropertyDetailsDto = z.infer<typeof PropertyDetailsSchema>;
 export type OwnerDetailsDto = z.infer<typeof OwnerDetailsSchema>;
 export type LocationDetailsDto = z.infer<typeof LocationDetailsSchema>;
 export type OtherDetailsDto = z.infer<typeof OtherDetailsSchema>;
-export type FloorDetailsDto = z.infer<typeof FloorDetailsSchema>;
-export type PropertyAssessmentDto = z.infer<typeof PropertyAssessmentSchema>;
-export type PropertyAttachmentDto = z.infer<typeof PropertyAttachmentSchema>; 
+export type ResidentialPropertyAssessmentDto = z.infer<typeof ResidentialPropertyAssessmentSchema>;
+export type PropertyAttachmentDto = z.infer<typeof PropertyAttachmentDetailsSchema>; 

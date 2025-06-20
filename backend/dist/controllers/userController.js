@@ -41,7 +41,7 @@ class UserController {
                         errors: validationError.errors
                     });
                 }
-                const { username, password, role, phoneNumber } = validatedData;
+                const { username, password, mobileNumber } = validatedData;
                 const creatorRole = req.user.role;
                 // Define role hierarchy and permissions
                 const allowedByRole = {
@@ -51,15 +51,15 @@ class UserController {
                     SURVEYOR: [],
                 };
                 // Check if creator has permission to create the requested role
-                if (!allowedByRole[creatorRole].includes(role)) {
-                    console.log('Forbidden: Insufficient permissions to create role:', role);
+                if (!allowedByRole[creatorRole].includes(req.user.role)) {
+                    console.log('Forbidden: Insufficient permissions to create role:', req.user.role);
                     return res.status(403).json({
                         success: false,
                         message: 'You do not have permission to create users with this role'
                     });
                 }
                 // Check if username already exists
-                const existingUser = yield prisma.user.findUnique({
+                const existingUser = yield prisma.usersMaster.findFirst({
                     where: { username }
                 });
                 if (existingUser) {
@@ -72,20 +72,35 @@ class UserController {
                 // Hash password
                 const hashedPassword = yield bcrypt_1.default.hash(password, 10);
                 // Create new user
-                const newUser = yield prisma.user.create({
+                const newUser = yield prisma.usersMaster.create({
                     data: {
                         username,
                         password: hashedPassword,
-                        role,
-                        phoneNumber,
-                        createdById: req.user.id
+                        mobileNumber,
                     },
                     select: {
-                        id: true,
+                        userId: true,
                         username: true,
-                        role: true,
-                        createdAt: true,
-                        updatedAt: true
+                        isCreatedAt: true
+                    }
+                });
+                // After creating a user, fetch the roleId from RolePermissionMaster using the role name, then create a UserRoleMapping entry with userId and roleId
+                const role = req.user.role;
+                const roleId = yield prisma.rolePermissionMaster.findFirst({
+                    where: { roleName: role },
+                    select: { roleId: true }
+                });
+                if (!roleId) {
+                    console.error('Role not found in RolePermissionMaster');
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Role not found in RolePermissionMaster'
+                    });
+                }
+                yield prisma.userRoleMapping.create({
+                    data: {
+                        userId: newUser.userId,
+                        roleId: roleId.roleId
                     }
                 });
                 console.log('User created successfully:', newUser);
@@ -110,12 +125,11 @@ class UserController {
                         message: 'Authentication required'
                     });
                 }
-                const user = yield prisma.user.findUnique({
-                    where: { id: req.user.id },
+                const user = yield prisma.usersMaster.findUnique({
+                    where: { userId: req.user.userId },
                     select: {
                         username: true,
-                        role: true,
-                        phoneNumber: true
+                        mobileNumber: true
                     }
                 });
                 if (!user) {
@@ -144,17 +158,12 @@ class UserController {
                         message: 'Authentication required'
                     });
                 }
-                const users = yield prisma.user.findMany({
-                    where: {
-                        createdBy: {
-                            id: req.user.id
-                        }
-                    },
+                const users = yield prisma.usersMaster.findMany({
+                    // If you want to filter by creator, add logic here if your schema supports it
                     select: {
-                        id: true,
+                        userId: true,
                         username: true,
-                        role: true,
-                        createdAt: true
+                        isCreatedAt: true
                     }
                 });
                 res.json({

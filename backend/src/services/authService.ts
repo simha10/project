@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-token-with-a
 export class AuthService {
   private static generateToken(user: any): string {
     return jwt.sign(
-      { userId: user.id, role: user.role },
+      { userId: user.userId, role: user.role },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -23,7 +23,7 @@ export class AuthService {
     }
 
     // Check if username already exists
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.usersMaster.findFirst({
       where: { username: data.username }
     });
 
@@ -35,24 +35,40 @@ export class AuthService {
     // Hash password
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
-    // Create user with validated role
-    const user = await prisma.user.create({
+    // Create user
+    const user = await prisma.usersMaster.create({
       data: {
         username: data.username,
         password: hashedPassword,
-        role: data.role,
-        phoneNumber: data.phoneNumber
+        mobileNumber: data.mobileNumber
+      }
+    });
+
+    // Fetch roleId from RolePermissionMaster
+    const roleIdObj = await prisma.rolePermissionMaster.findFirst({
+      where: { roleName: currentUserRole },
+      select: { roleId: true }
+    });
+    if (!roleIdObj) throw new Error('Role not found');
+
+    // Create UserRoleMapping entry
+    await prisma.userRoleMapping.create({
+      data: {
+        userId: user.userId,
+        roleId: roleIdObj.roleId
       }
     });
 
     // Generate token
-    const token = this.generateToken(user);
+    const token = this.generateToken({ userId: user.userId, role: currentUserRole });
 
-    // Create session
+    // Create session (adjust fields as per your Session model)
     await prisma.session.create({
       data: {
-        userId: user.id,
-        token
+        userId: user.userId,
+        loginTime: new Date(),
+        logoutTime: new Date(),
+        isActive: true
       }
     });
 
@@ -61,7 +77,7 @@ export class AuthService {
 
   static async login(data: LoginDto): Promise<{ user: any; token: string }> {
     // Find user
-    const user = await prisma.user.findUnique({
+    const user = await prisma.usersMaster.findFirst({
       where: { username: data.username }
     });
 
@@ -75,14 +91,23 @@ export class AuthService {
       throw new Error('Invalid credentials');
     }
 
-    // Generate token
-    const token = this.generateToken(user);
+    // Fetch user's role
+    const userRoleMapping = await prisma.userRoleMapping.findFirst({
+      where: { userId: user.userId },
+      include: { role: true }
+    });
+    const roleName = userRoleMapping?.role?.roleName || 'UNKNOWN';
 
-    // Create session
+    // Generate token
+    const token = this.generateToken({ userId: user.userId, role: roleName });
+
+    // Create session (adjust fields as per your Session model)
     await prisma.session.create({
       data: {
-        userId: user.id,
-        token
+        userId: user.userId,
+        loginTime: new Date(),
+        logoutTime: new Date(),
+        isActive: true
       }
     });
 
@@ -92,9 +117,9 @@ export class AuthService {
   static async validateToken(token: string): Promise<any> {
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-      
-      const user = await prisma.user.findUnique({
-        where: { id: decoded.userId }
+
+      const user = await prisma.usersMaster.findUnique({
+        where: { userId: decoded.userId }
       });
 
       if (!user) {
